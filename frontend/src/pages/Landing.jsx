@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { checkBackendHealth, isLocalHost } from '../api/client';
 
 function Hero3DFallback() {
   return (
@@ -22,10 +23,19 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [backendOk, setBackendOk] = useState(null);
   const { register, login } = useAuth();
   const navigate = useNavigate();
 
   const isRegister = mode === 'register';
+
+  useEffect(() => {
+    let cancelled = false;
+    checkBackendHealth().then((ok) => {
+      if (!cancelled) setBackendOk(ok);
+    });
+    return () => { cancelled = true; };
+  }, [mode]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -46,11 +56,15 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
       const msg = err.response?.data?.error || err.message;
       const isNetwork = !err.response && (err.message === 'Network Error' || err.code === 'ERR_NETWORK');
       const is404 = err.response?.status === 404;
-      setError(
-        isNetwork || is404
-          ? 'Backend not reachable. Open a terminal: cd backend && npm run dev (need MongoDB running)'
-          : (msg || (isRegister ? 'Registration failed' : 'Login failed'))
-      );
+      if (isNetwork || is404) {
+        setError(
+          isLocalHost()
+            ? 'Backend is not running. Steps: (1) Start MongoDB  (2) Open a terminal and run: cd backend && npm run dev  (3) Wait until you see "Server running", then try again.'
+            : 'Server is not configured for this deployment. The host must set VITE_API_URL to the backend URL.'
+        );
+      } else {
+        setError(msg || (isRegister ? 'Registration failed' : 'Login failed'));
+      }
     } finally {
       setLoading(false);
     }
@@ -74,6 +88,16 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
         <h2 className="text-xl font-bold text-white mb-6">
           {isRegister ? 'Create account' : 'Welcome back'}
         </h2>
+        {backendOk === false && (
+          <div className="mb-4 p-3 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-200 text-sm">
+            <strong>Backend not running.</strong>{' '}
+            {isLocalHost() ? (
+              <>Start MongoDB, then run in a terminal: <code className="bg-black/30 px-1 rounded">cd backend && npm run dev</code>. Wait for &quot;Server running&quot;, then try Register or Login.</>
+            ) : (
+              <>This deployment needs <code className="bg-black/30 px-1 rounded">VITE_API_URL</code> set to your backend URL.</>
+            )}
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-4">
           {isRegister && (
             <div>
@@ -183,9 +207,16 @@ export default function Landing() {
             The platform that bridges the gap between your current skills and industry demand. Get a personalized AI roadmap and a career assistant—built for students and judged by experts.
           </motion.p>
           {!user && (
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="text-gray-500 text-sm">
-              Register first, then log in to start your assessment.
-            </motion.p>
+            <>
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="text-gray-500 text-sm">
+                Register first, then log in to start your assessment.
+              </motion.p>
+              {isLocalHost() && (
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="text-gray-600 text-xs max-w-md mx-auto">
+                  Running locally? Start MongoDB, then run <code className="bg-white/10 px-1.5 py-0.5 rounded text-gray-400">cd backend && npm run dev</code> so Register and Login work.
+                </motion.p>
+              )}
+            </>
           )}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
             {user ? (
