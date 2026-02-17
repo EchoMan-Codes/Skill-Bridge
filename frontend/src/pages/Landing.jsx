@@ -59,7 +59,7 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
       if (isNetwork || is404) {
         setError(
           isLocalHost()
-            ? 'Backend is not running. Steps: (1) Start MongoDB  (2) Open a terminal and run: cd backend && npm run dev  (3) Wait until you see "Server running", then try again.'
+            ? 'Start the backend first: in the project folder run npm run dev (or in a new terminal: cd backend && npm run dev). Then try again.'
             : 'Server is not configured for this deployment. The host must set VITE_API_URL to the backend URL.'
         );
       } else {
@@ -89,12 +89,11 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
           {isRegister ? 'Create account' : 'Welcome back'}
         </h2>
         {backendOk === false && (
-          <div className="mb-4 p-3 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-200 text-sm">
-            <strong>Backend not running.</strong>{' '}
+          <div className="mb-4 p-3 rounded-xl bg-white/5 border border-white/10 text-gray-300 text-sm">
             {isLocalHost() ? (
-              <>Start MongoDB, then run in a terminal: <code className="bg-black/30 px-1 rounded">cd backend && npm run dev</code>. Wait for &quot;Server running&quot;, then try Register or Login.</>
+              <> <span className="font-medium text-white">Tip:</span> From the project folder run <code className="bg-black/30 px-1.5 py-0.5 rounded text-brand-300">npm run dev</code> (starts backend + frontend). Or in a new terminal: <code className="bg-black/30 px-1.5 py-0.5 rounded text-brand-300">cd backend && npm run dev</code>. Then try again. </>
             ) : (
-              <>This deployment needs <code className="bg-black/30 px-1 rounded">VITE_API_URL</code> set to your backend URL.</>
+              <> Backend not configured. Set <code className="bg-black/30 px-1.5 py-0.5 rounded text-brand-300">VITE_API_URL</code> to your API URL. </>
             )}
           </div>
         )}
@@ -213,7 +212,7 @@ export default function Landing() {
               </motion.p>
               {isLocalHost() && (
                 <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="text-gray-600 text-xs max-w-md mx-auto">
-                  Running locally? Start MongoDB, then run <code className="bg-white/10 px-1.5 py-0.5 rounded text-gray-400">cd backend && npm run dev</code> so Register and Login work.
+                  Running locally? From the project folder run <code className="bg-white/10 px-1.5 py-0.5 rounded text-gray-400">npm run dev</code> to start backend + frontend together.
                 </motion.p>
               )}
             </>
